@@ -1,0 +1,762 @@
+
+const port = 4000;
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const path = require("path");
+const cors = require("cors");
+
+const nodemailer = require('nodemailer');
+const Mailgen = require('mailgen');
+
+const { EMAIL, PASSWORD} = require('./env.js');
+
+app.use(express.json());
+app.use(cors());
+
+// Database Connection With MongoDB
+mongoose.connect("mongodb+srv://Bison:0123456789@cluster0.fwkif6z.mongodb.net/t-shirt-new");
+
+//API Creation
+
+app.get("/", (req, res)=>{
+    res.send("Express App is Running")
+})
+
+// Image Storage Engine
+
+const storage = multer.diskStorage({
+    destination: './upload/images',
+    filename:(req, file, cb)=>{
+        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+    }
+})
+
+const upload = multer({storage:storage})
+
+//Creating Upload Endpoint for images
+
+app.use('/images',express.static('upload/images'))
+
+app.post("/upload", upload.single('product'),(req,res)=>{
+    res.json({
+        success:1,
+        image_url: `http://localhost:${port}/images/${req.file.filename}`
+    })
+})
+
+// Schema for Creating Products
+
+const Product = mongoose.model("Product",{
+    id:{
+        type: Number,
+        required: true,
+    },
+    name:{
+        type: String,
+        required:true,
+    },
+    image:{
+        type:String,
+        required:true,
+    },
+    category:{
+        type: String,
+        required: true,
+    },
+    new_price:{
+        type:Number,
+        required: true,
+    },
+    old_price:{
+        type:Number,
+        // required:true,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    },
+    available:{
+        type:Boolean,
+        default:true,
+    },
+    description:{
+        type:String,
+    },
+    colors:{
+        type:Object,
+    },
+    image_logo:{
+        type:String,
+    },
+    avl_size:{
+        type:Object,
+    },
+    image_2:{
+        type:String,
+    },
+    image_3:{
+        type:String,
+    },
+    rating:{
+        type:Number,
+    },
+    reviewText:{
+        type:Object,
+    },
+    no_of_rators:{
+        type:Number,
+    },
+
+})
+
+app.post('/addproduct', async (req,res)=>{
+    // let descbox = [];
+    // for(let i = 0; i < 50; i++){
+    //     let text = '';
+    //     let name = '';
+    //     let profilephoto = '';
+    //     let rating = 0; 
+
+    //     descbox.push({
+    //         text,
+    //         name,
+    //         profilephoto,
+    //         rating
+    //     })
+    // }
+    let products = await Product.find({});
+    let id;
+    if(products.length>0)
+    {
+        let last_product_array = products.slice(-1);
+        let last_product = last_product_array[0];
+        id = last_product.id+1;
+    }
+    else{
+        id=1;
+    }
+    const product = new Product({
+        id:id,
+        name:req.body.name,
+        image:req.body.image,
+        category:req.body.category,
+        new_price:req.body.new_price,
+        old_price:req.body.old_price,
+        description:req.body.description,
+        colors:req.body.colors,
+        image_logo:req.body.image_logo,
+        avl_size:req.body.avl_size,
+        image_2:req.body.image_2,
+        image_3:req.body.image_3,
+        rating:req.body.rating,
+        reviewText:req.body.reviewText,
+        no_of_rators:req.body.no_of_rators,
+    });
+    console.log(product);
+    await product.save();
+    console.log("Saved");
+    res.json({
+        success:true,
+        name:req.body.name,
+    })
+})
+
+// Creating API for deleting products
+
+app.post('/removeproduct', async(req, res)=>{
+    await Product.findOneAndDelete({id:req.body.id});
+    console.log("Removed");
+    res.json({
+        success:true,
+        name:req.body.name
+    })
+})
+
+//creating endpoint for getting related products
+app.post('/getrelatedproducts', async (req,res)=>{
+    let products = await Product.find({category:req.body.category});
+    let related_products = products.slice(-4).reverse();
+    console.log("Related products fetched");
+    res.send(related_products);
+})
+//creating API for set available or not
+app.post('/setavailablestate',async (req,res)=>{
+    console.log("AvailableStateAdded",req.body.itemId);
+    let currentProduct = await Product.findOne({id:req.body.itemId});
+    currentProduct.available = req.body.available;   
+    await Product.findOneAndUpdate({id:req.body.itemId},{available:currentProduct.available});
+    res.send("AvailableStateAdded")
+})
+
+//creating API for set reviews and ratings
+app.post('/addreview',async (req,res)=>{
+    console.log("reviewAdded",req.body.itemId);
+    let currentProduct = await Product.findOne({id:req.body.itemId});
+    currentProduct.reviewText[currentProduct.no_of_rators+1].text = req.body.text;   
+    currentProduct.reviewText[currentProduct.no_of_rators+1].name = req.body.name;
+    currentProduct.reviewText[currentProduct.no_of_rators+1].profilephoto = req.body.profilephoto;
+    currentProduct.reviewText[currentProduct.no_of_rators+1].rating = req.body.rating;    
+    currentProduct.rating = (currentProduct.rating * currentProduct.no_of_rators + req.body.rating) / (currentProduct.no_of_rators + 1);                  //.push(req.body.review);
+    currentProduct.no_of_rators += 1;
+    
+    await Product.findOneAndUpdate({id:req.body.itemId},{reviewText:currentProduct.reviewText, no_of_rators:currentProduct.no_of_rators, rating:currentProduct.rating});
+    res.send("reviewAdded")
+})
+
+app.post('/addrating',async (req,res)=>{
+    console.log("ratingAdded",req.body.itemId);
+    let currentProduct = await Product.findOne({id:req.body.itemId});
+    currentProduct.rating = req.body.rating;
+    currentProduct.no_of_rators += 1;
+    await Product.findOneAndUpdate({id:req.body.itemId},{rating:currentProduct.rating, no_of_rators:currentProduct.no_of_rators});
+    res.send("ratingAdded")
+})
+
+
+
+// Creating API for getting all products
+
+app.get('/allproducts',async (req, res)=>{
+    let products = await Product.find({});
+    products = products.reverse();
+    console.log("All Products Fetched");
+    res.send(products);
+})
+
+// Shema creating for User model
+
+const Users = mongoose.model('Users', {
+    name:{
+        type:String,
+        unique:true,
+    },
+    email:{
+        type:String,
+        unique:true,
+    },
+    password:{
+        type:String,
+        unique:true,
+    },
+    cartData:{
+        type:Object,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    },
+    index:{
+        type:String,
+        required:true,
+    },
+    faculty:{
+        type:String,
+        required:true,
+    },
+    department:{
+        type:String,
+        required:true,
+    },
+    batch:{
+        type:String,
+        required:true,
+    },
+    profile_pic:{
+        type:String,
+    },
+})
+
+
+
+// creating endpoint for registering user
+app.post('/signup', async(req, res)=>{
+
+    let check = await Users.findOne({email:req.body.email});
+    if(check){
+        return res.status(400).json({success:false,errors:"existing user found with same email address"})
+    }
+    let cart =[];
+    for(let i =0; i < 300; i++){
+        let q = 0;
+        let size =[];
+        let color =[];
+        cart.push({
+            q,
+            size,
+            color,
+        })
+    }
+    const user = new Users({
+        name:req.body.username,
+        email: req.body.email,
+        password:req.body.password,
+        cartData:cart,
+        index:req.body.index,
+        faculty:req.body.faculty,
+        department:req.body.department,
+        batch:req.body.batch,
+        profile_pic: req.body.profile_pic,
+    })
+
+    await user.save();
+
+    const data = {
+        user:{
+            id:user.id
+        }
+    }
+    const token = jwt.sign(data, 'secret_ecom');
+    res.json({success:true,token})
+
+    /** send mail to user */
+    // let testAccount = await nodemailer.createTestAccount();
+    let config = {
+        service : 'gmail',
+        auth : {
+            user: EMAIL,
+            pass: PASSWORD
+        }
+    }
+
+    // const transporter = nodemailer.createTransport({
+    //     host: "smtp.ethereal.email",
+    //     port: 587,
+    //     secure: false, // Use `true` for port 465, `false` for all other ports
+    //     auth: {
+    //       user: testAccount.user,
+    //       pass: testAccount.pass,
+    //     },
+    //   });
+
+    const transporter = nodemailer.createTransport(config)
+
+    let message = {
+    from: 'MORAMERCH', // sender address
+    to: req.body.email, // list of receivers
+    subject: "Register for MORAMERCH", // Subject line
+    text: "Successfully Register with MORAMERCH.", // plain text body
+    html: "<b>Successfully Register with MORAMERCH.</b>", // html body
+    }
+
+    transporter.sendMail(message);
+    // .then(()=>{
+    // const token = jwt.sign(data, 'secret_ecom');
+    // return res.status(201).json({ 
+    //     msg: "you should raceive an email", 
+    //     success:true,
+    //     token,
+    // })
+    // }).catch(error => {
+    // return res.status(500).json({error})
+    // })
+
+    /** end of sending mail  */
+
+    
+})
+
+
+///////////////////////////////////////////////////////////
+// Creating API for getting all users
+
+app.get('/allusers',async (req, res)=>{
+    let users = await Users.find({});
+    console.log("All Users Fetched");
+    res.send(users);
+})
+
+
+////////////////////////////////////////////////////////////////////
+
+// creating endpoint for user login
+
+app.post('/login',async (req, res)=>{
+    let user = await Users.findOne({email:req.body.email});
+    if(user){
+        const passCompare = req.body.password===user.password;
+        if(passCompare){
+            const data = {
+                user:{
+                    id:user.id
+                }
+            }
+            const token = jwt.sign(data,'secret_ecom');
+            res.json({success:true,token});
+        }
+        else{
+            res.json({success:false, errors:"Wrong Password"});
+        }
+    }
+    else{
+        res.json({success:false, errors:"Wrong Email Id"})
+    }
+})
+
+//creating endpoint for newcollection data
+app.get('/newcollections', async (req, res)=>{
+    let products = await Product.find({});
+
+    let newcollection = products.slice(-8).reverse();
+    console.log("NewCollection Fetched");
+    res.send(newcollection);
+})
+
+//creating endpoint for popular in mora section
+app.get('/popularinmora', async (req,res)=>{
+    let products = await Product.find({category:'t-shirts'});
+    let popular_in_mora = products.slice(-4).reverse();
+    console.log("Popular in mora fetched");
+    res.send(popular_in_mora);
+})
+
+// creating middelware to fetch user
+    const fetchUser = async (req,res,next)=>{
+        const token = req.header('auth-token');
+        if(!token){
+            res.status(401).send({errors:"Please authenticate using valid token"})
+        }
+        else{
+            try{
+                const data = jwt.verify(token,'secret_ecom');
+                req.user = data.user;
+                next();
+            }catch(error){
+                res.status(401).send({errors:"Please authenticate using valid token"})
+            }
+        }
+    }
+
+//creating endpoint for adding products in cartdata
+app.post('/addtocart',fetchUser,async (req,res)=>{
+    console.log("added",req.body.itemId);
+    let userData = await Users.findOne({_id:req.user.id});
+    userData.cartData[req.body.itemId].q +=1;
+    userData.cartData[req.body.itemId].size.push(req.body.sizeId);
+    userData.cartData[req.body.itemId].color.push(req.body.colorId);
+    await Users.findByIdAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    res.send("Added")
+})
+
+//creating end point for add profile photo
+app.post('/addprofilephoto',fetchUser,async (req,res)=>{
+    console.log("dpAdded",req.body.itemId);
+    let currentUser = await Users.findOne({_id:req.user.id});
+    currentUser.profile_pic = req.body.profile_pic;
+    await Users.findByIdAndUpdate({_id:req.user.id},{profile_pic:currentUser.profile_pic});
+    res.send("dpAdded")
+})
+
+//creating endpoint for change password
+app.post('/changepassword',fetchUser,async (req,res)=>{
+    console.log("changed");
+    let userData = await Users.findOne({_id:req.user.id});
+    userData.password = req.body.password;
+    await Users.findByIdAndUpdate({_id:req.user.id},{password:userData.password});
+    res.send({success:true})
+})
+
+
+//creating end point to remove product from cartdata
+app.post('/removefromcart',fetchUser,async (req,res)=>{
+    console.log("removed",req.body.itemId);
+    let userData = await Users.findOne({_id:req.user.id});
+    if(userData.cartData[req.body.itemId].q>0)
+    userData.cartData[req.body.itemId].q -=1;
+    delete userData.cartData[req.body.itemId].size[req.body.sizeId];
+    delete userData.cartData[req.body.itemId].color[req.body.sizeId];//both are equal positions
+    await Users.findByIdAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    res.send("Removed")
+})
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//creating end point to remove all  products from cartdata
+app.post('/removeallfromcart',fetchUser,async (req,res)=>{
+    console.log("Allremoved",req.body.itemId);
+    let userData = await Users.findOne({_id:req.user.id});
+    if(userData.cartData[req.body.itemId].q>0)
+    userData.cartData[req.body.itemId].q =0;
+    userData.cartData[req.body.itemId].size =[];
+    userData.cartData[req.body.itemId].color =[];
+    await Users.findByIdAndUpdate({_id:req.user.id},{cartData:userData.cartData});
+    res.send("Removed")
+})
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//creating endpoint to get cart data
+app.post('/getcart',fetchUser,async (req,res)=>{
+    console.log("GetCart");
+    let userData = await Users.findOne({_id:req.user.id});
+    res.json(userData.cartData);
+})
+
+///////////////////////////////////////////////////////////////
+
+//creating API for get user
+
+app.post('/getuser',fetchUser,async (req,res)=>{
+    console.log("GetUser");
+    let userEmail = await Users.findOne({_id:req.user.id});
+    res.json(userEmail.email);
+})
+
+// Image Storage Engine for slips
+
+const storage_slip = multer.diskStorage({
+    destination: './slipupload/slipimages',
+    filename:(req, file, cb)=>{
+        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+
+    }
+})
+
+const upload_slip = multer({storage:storage_slip})
+
+//Creating Upload Endpoint for slip images
+
+app.use('/slipimages',express.static('slipupload/slipimages'))
+
+app.post("/slipupload", upload_slip.single('order'),(req,res)=>{
+    res.json({
+        success:1,
+        image_url: `http://localhost:${port}/slipimages/${req.file.filename}`
+    })
+})
+
+// schema for creating Orders
+
+const Order = mongoose.model("Order",{
+    id:{
+        type: Number,
+        required: true,
+    },
+    uder_id:{
+        type: String,//this is email of the user
+        required:true,
+    },
+    slip_image:{
+        type:String,
+    },
+    num_purchase_products:{
+        type: Number,
+        required: true,
+    },
+    product_size:{
+        type:Object,///////////////////////////////
+        required:true,
+    },
+    product_color:{
+        type:Object,///////////////////////////////
+        required:true,
+    },
+    whatsApp:{
+        type:String,
+        required: true,
+    },
+    product_id:{
+        type:Number,
+        required:true,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    },
+    order_type:{
+        type:String,
+        required:true,
+    },
+    total:{
+        type:Number,
+        required: true,
+    }
+})
+
+ 
+
+app.post('/orderconfirmation', async (req,res)=>{
+    let orders = await Order.find({});
+    let id;
+    if(orders.length>0)
+    {
+        let last_order_array = orders.slice(-1);
+        let last_order = last_order_array[0];
+        id = last_order.id+1;
+    }
+    else{
+        id=1;
+    }
+    const order = new Order({
+        id:id,
+        uder_id:req.body.uder_id,
+        slip_image:req.body.slip_image,
+        num_purchase_products:req.body.num_purchase_products,
+        product_size:req.body.product_size,
+        product_color:req.body.product_color,
+        whatsApp:req.body.whatsApp,
+        product_id:req.body.product_id,
+        order_type:req.body.order_type,
+        total:req.body.total,
+    });
+    console.log(order);
+    await order.save();
+    console.log("Saved");
+    res.json({
+        success:true,
+        user_id:req.body.uder_id,
+    });
+
+    /** sent a mail when order */
+
+    let config = {
+        service:'gmail',
+        auth: {
+            user: EMAIL,
+            pass: PASSWORD
+        }
+    }
+    let transporter = nodemailer.createTransport(config);
+
+    let MailGenerator = new Mailgen({
+        theme:'default',
+        product:{
+            name:'MORAMERCH',
+            link: 'https://mailgen.js/'
+        }
+    })
+
+    let desc = 'You have '+req.body.order_type+" "+req.body.num_purchase_products+" "+req.body.productname;
+
+    let response = {
+        body:{
+          name:req.body.username,
+          intro:  "Your bill has arrived!",
+          table: {
+            data:[
+                {
+                    item: req.body.productname,
+                    description: desc,
+                    price : req.body.total,
+                }
+            ]
+          },
+          outro: 'Thank you for order from us!'
+        }
+    }
+
+    let mail = MailGenerator.generate(response)
+
+    let message = {
+        from : EMAIL,
+        to : req.body.uder_id,
+        subject : 'Place your Order',
+        html: mail
+    }
+
+    transporter.sendMail(message);
+    // .then(()=>{
+    //     return res.status(200).json({
+    //         mas:"You should recieve an email",
+    //         success:true,
+    //         user_id:req.body.uder_id,
+    //     })
+    // }).catch(error => {
+    //     return res.status(500).json({ error});
+    // });
+    /** end of mail */
+    
+    
+})
+
+//creating endpoint for getting orders by product id
+//shold pass product id in request
+app.post('/getordersusingid', async (req,res)=>{
+    let orders = await Order.find({product_id:req.body.product_id});
+    console.log("Get that product orders");
+    res.json(orders);
+})
+
+//creating endpoint for getting orders of a user
+app.post('/getordersofuser', async (req,res)=>{
+    let orders = await Order.find({uder_id:req.body.uder_id});
+    console.log("Get that user's order");
+    res.json(orders);
+})
+
+// Creating API for deleting orders by product id
+
+app.post('/removeorder', async(req, res)=>{
+    let orders = await Order.find({product_id:req.body.product_id});
+    for(i=0;i<orders.length;i++){
+        await Order.findOneAndDelete({product_id:req.body.product_id});
+    }
+    console.log("Removed");
+    res.json({
+        success:true,
+        product_id:req.body.product_id
+    })
+})
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+const Advertisements = mongoose.model("Adverticements", {
+    adid:{
+        type: String,
+        required: true,
+    },
+    ad_image:{
+        type: String,
+    },
+    ad_category:{
+        type: String,
+    }
+})
+
+app.post('/addAdertisement', async(req, res)=>{
+
+    let adds = await Advertisements.find({});
+    let id;
+    if(adds.length>0)
+    {
+        let last_add_array = adds.slice(-1);
+        let last_add = last_add_array[0];
+        id = last_add.id+1;
+    }
+    else{
+        id=1;
+    }
+
+    const add = new Advertisements({
+        adid:id,
+        ad_image:req.body.ad_image,
+        ad_category: req.body.ad_category,
+    })
+
+    await add.save();
+
+    res.json({
+        success:true,
+        name:req.body.name,
+    });
+})
+
+//creating endpoint for get all advertisements
+
+app.get('/alladvertisements',async (req, res)=>{
+    let adds = await Advertisements.find({});
+    adds = adds.reverse();
+    console.log("All Advertisements Fetched");
+    res.send(adds);
+})
+
+app.listen(port, (error)=>{
+    if(!error){
+        console.log("Server Running on Port "+port)
+    }
+    else{
+        console.log("Error : "+error)
+    }
+})
