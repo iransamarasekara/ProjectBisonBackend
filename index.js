@@ -43,7 +43,7 @@ app.use('/images',express.static('upload/images'))
 app.post("/upload", upload.single('product'),(req,res)=>{
     res.json({
         success:1,
-        image_url: `http://localhost:${port}/images/${req.file.filename}`
+        image_url: `https://projectbisonbackend.onrender.com/images/${req.file.filename}`
     })
 })
 
@@ -522,7 +522,7 @@ app.use('/slipimages',express.static('slipupload/slipimages'))
 app.post("/slipupload", upload_slip.single('order'),(req,res)=>{
     res.json({
         success:1,
-        image_url: `http://localhost:${port}/slipimages/${req.file.filename}`
+        image_url: `https://projectbisonbackend.onrender.com/slipimages/${req.file.filename}`
     })
 })
 
