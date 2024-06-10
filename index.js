@@ -771,8 +771,8 @@ app.post('/orderconfirmation', async (req,res)=>{
     let config = {
         service:'gmail',
         auth: {
-            user: EMAIL,
-            pass: PASSWORD
+            user: process.env.EMAIL,
+            pass: process.env.PASSWORD
         }
     }
     let transporter = nodemailer.createTransport(config);
