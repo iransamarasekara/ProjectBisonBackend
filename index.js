@@ -1,4 +1,3 @@
-
 const port = 4000;
 const express = require("express");
 const app = express();
@@ -7,6 +6,16 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
+const {S3Client,PutObjectCommand } = require('@aws-sdk/client-s3');
+const {getSignedUrl} = require('@aws-sdk/s3-request-presigner');
+
+const s2Client = new S3Client({ 
+    region: 'eu-north-1',
+    credentials: {
+        accessKeyId:"AKIAQ3EGTDIGBPQNLFJW",
+        secretAccessKey:"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"
+    }
+});
 
 const nodemailer = require('nodemailer');
 const Mailgen = require('mailgen');
@@ -19,33 +28,141 @@ app.use(cors());
 // Database Connection With MongoDB
 mongoose.connect("mongodb+srv://Bison:0123456789@cluster0.fwkif6z.mongodb.net/t-shirt-new");
 
+
+// async function getObjectURL(key){
+//     const params = {
+//         Bucket: "moramerch",
+//         Key: key,
+        
+//     }
+
+//     try {
+//         const url = await getSignedUrl(s2Client, new GetObjectCommand(params), { expiresIn: 900 });
+//         return url;
+//     } catch (error) {
+//         console.error("Error generating signed URL", error);
+//         return null;
+//     }
+// }
+
+// async function putObject(filename, contentType){
+//     const params = {
+//         Bucket: "moramerch",
+//         Key: 'myfiles/' + filename,
+//         contentType: contentType,
+//     }
+
+//     const url = await getSignedUrl(s2Client, new PutObjectCommand(params));
+//     return url;
+// }
+
+async function getPutObjectSignedUrl(filename, contentType) {
+    const params = {
+        Bucket: "moramerch",
+        Key: `myfiles/${filename}`,
+        ContentType: contentType,
+    };
+
+    const url = await getSignedUrl(s2Client, new PutObjectCommand(params), { expiresIn: 900 });
+    return url;
+}
+
+async function getPutObjectSignedUrl2(filename, contentType) {
+    const params = {
+        Bucket: "moramerch",
+        Key: `slipfiles/${filename}`,
+        ContentType: contentType,
+    };
+
+    const url = await getSignedUrl(s2Client, new PutObjectCommand(params), { expiresIn: 900 });
+    return url;
+}
+
+
+
 //API Creation
 
-app.get("/", (req, res)=>{
+app.get("/", async (req, res)=>{
     res.send("Express App is Running")
 })
 
+// Endpoint to get a signed URL for uploading a file
+app.get('/upload', async (req, res) => {
+    const filename = "test.mp4";
+    const contentType = "video/mp4";
+    try {
+        const url = await getPutObjectSignedUrl(filename, contentType);
+        res.json({ url });
+    } catch (error) {
+        console.error("Error generating signed URL", error);
+        res.status(500).send("Error generating signed URL");
+    }
+});
+
+// Setting up multer middleware for handling multipart/form-data
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Creating upload endpoint for images
+app.post("/upload", upload.single('product'), async (req, res) => {
+    const file = req.file;
+    if (!file) {
+        return res.status(400).send("No file uploaded.");
+    }
+
+    const filename = `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`;
+    const contentType = file.mimetype;
+
+    try {
+        const url = await getPutObjectSignedUrl(filename, contentType);
+        // Here you would typically upload the file to S3 using the signed URL.
+        // This is a simplified example:
+        const uploadParams = {
+            Bucket: "moramerch",
+            Key: `myfiles/${filename}`,
+            Body: file.buffer,
+            ContentType: contentType,
+        };
+        await s2Client.send(new PutObjectCommand(uploadParams));
+
+        res.json({
+            success: 1,
+            image_url: `https://moramerch.s3.eu-north-1.amazonaws.com/myfiles/${filename}`
+        });
+    } catch (error) {
+        console.error("Error uploading file to S3", error);
+        res.status(500).send("Error uploading file to S3");
+    }
+});
+
+
+// //photo upload
+// app.get('/upload', async (req, res) =>{
+//     let url = await putObject("test.mp4", "video/mp4");
+//     console.log(url);
+// })
+
 // Image Storage Engine
 
-const storage = multer.diskStorage({
-    destination: './upload/images',
-    filename:(req, file, cb)=>{
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
-    }
-})
+// const storage = multer.diskStorage({
+//     destination: './upload/images',
+//     filename:(req, file, cb)=>{
+//         return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+//     }
+// })
 
-const upload = multer({storage:storage})
+// const upload = multer({storage:storage})
 
 //Creating Upload Endpoint for images
 
-app.use('/images',express.static('upload/images'))
+// app.use('/images',express.static('upload/images'))
 
-app.post("/upload", upload.single('product'),(req,res)=>{
-    res.json({
-        success:1,
-        image_url: `https://projectbisonbackend.onrender.com/images/${req.file.filename}`
-    })
-})
+// app.post("/upload", upload.single('product'),(req,res)=>{
+//     res.json({
+//         success:1,
+//         image_url: `http://localhost:${port}/images/${req.file.filename}`
+//     })
+// })
 
 // Schema for Creating Products
 
@@ -505,26 +622,67 @@ app.post('/getuser',fetchUser,async (req,res)=>{
 
 // Image Storage Engine for slips
 
-const storage_slip = multer.diskStorage({
-    destination: './slipupload/slipimages',
-    filename:(req, file, cb)=>{
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
 
+const storage_slip = multer.memoryStorage();
+const upload_slip = multer({ storage: storage_slip });
+
+// Creating upload endpoint for images
+app.post("/slipimages", upload_slip.single('order'), async (req, res) => {
+    const file = req.file;
+    if (!file) {
+        return res.status(400).send("No file uploaded.");
     }
-})
 
-const upload_slip = multer({storage:storage_slip})
+    const filename = `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`;
+    const contentType = file.mimetype;
+
+    try {
+        const url = await getPutObjectSignedUrl2(filename, contentType);
+        // Here you would typically upload the file to S3 using the signed URL.
+        // This is a simplified example:
+        const uploadParams = {
+            Bucket: "moramerch",
+            Key: `slipfiles/${filename}`,
+            Body: file.buffer,
+            ContentType: contentType,
+        };
+        await s2Client.send(new PutObjectCommand(uploadParams));
+
+        res.json({
+            success: 1,
+            image_url: `https://moramerch.s3.eu-north-1.amazonaws.com/slipfiles/${filename}`
+        });
+    } catch (error) {
+        console.error("Error uploading file to S3", error);
+        res.status(500).send("Error uploading file to S3");
+    }
+});
+
+
+
+
+
+
+// const storage_slip = multer.diskStorage({
+//     destination: './slipupload/slipimages',
+//     filename:(req, file, cb)=>{
+//         return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`)
+
+//     }
+// })
+
+// const upload_slip = multer({storage:storage_slip})
 
 //Creating Upload Endpoint for slip images
 
-app.use('/slipimages',express.static('slipupload/slipimages'))
+// app.use('/slipimages',express.static('slipupload/slipimages'))
 
-app.post("/slipupload", upload_slip.single('order'),(req,res)=>{
-    res.json({
-        success:1,
-        image_url: `https://projectbisonbackend.onrender.com/slipimages/${req.file.filename}`
-    })
-})
+// app.post("/slipupload", upload_slip.single('order'),(req,res)=>{
+//     res.json({
+//         success:1,
+//         image_url: `http://localhost:${port}/slipimages/${req.file.filename}`
+//     })
+// })
 
 // schema for creating Orders
 
