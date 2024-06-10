@@ -729,7 +729,15 @@ const Order = mongoose.model("Order",{
     total:{
         type:Number,
         required: true,
-    }
+    },
+    username:{
+        type:String,
+        required:true,
+    },
+    productname:{
+        type:String,
+        required:true,
+    },
 })
 
  
@@ -757,6 +765,8 @@ app.post('/orderconfirmation', async (req,res)=>{
         product_id:req.body.product_id,
         order_type:req.body.order_type,
         total:req.body.total,
+        username:req.body.username,
+        productname:req.body.productname,
     });
     console.log(order);
     await order.save();
@@ -807,7 +817,7 @@ app.post('/orderconfirmation', async (req,res)=>{
     let mail = MailGenerator.generate(response)
 
     let message = {
-        from : EMAIL,
+        from : process.env.EMAIL,
         to : req.body.uder_id,
         subject : 'Place your Order',
         html: mail
