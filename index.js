@@ -435,8 +435,8 @@ app.post('/signup', async(req, res)=>{
     let config = {
         service : 'gmail',
         auth : {
-            user: EMAIL,
-            pass: PASSWORD
+            user: process.env.EMAIL,
+            pass: process.env.PASSWORD
         }
     }
 
