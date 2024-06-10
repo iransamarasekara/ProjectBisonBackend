@@ -627,7 +627,7 @@ const storage_slip = multer.memoryStorage();
 const upload_slip = multer({ storage: storage_slip });
 
 // Creating upload endpoint for images
-app.post("/slipimages", upload_slip.single('order'), async (req, res) => {
+app.post("/slipupload", upload_slip.single('order'), async (req, res) => {
     const file = req.file;
     if (!file) {
         return res.status(400).send("No file uploaded.");
