@@ -9,11 +9,13 @@ const cors = require("cors");
 const {S3Client,PutObjectCommand } = require('@aws-sdk/client-s3');
 const {getSignedUrl} = require('@aws-sdk/s3-request-presigner');
 
+require("dotenv").config();
+
 const s2Client = new S3Client({ 
     region: 'eu-north-1',
     credentials: {
-        accessKeyId:"AKIAQ3EGTDIGBPQNLFJW",
-        secretAccessKey:"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"
+        accessKeyId:process.env.ACCESS_KEY_ID,
+        secretAccessKey:process.env.SECRET_ACCESS_KEY
     }
 });
 
