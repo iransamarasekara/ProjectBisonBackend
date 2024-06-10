@@ -22,8 +22,6 @@ const s2Client = new S3Client({
 const nodemailer = require('nodemailer');
 const Mailgen = require('mailgen');
 
-const { EMAIL, PASSWORD} = require('./env.js');
-
 app.use(express.json());
 app.use(cors());
 
