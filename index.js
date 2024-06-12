@@ -384,6 +384,10 @@ const Users = mongoose.model('Users', {
     profile_pic:{
         type:String,
     },
+    isVerified:{
+        type:Boolean,
+        default:false,
+    }
 })
 
 
@@ -406,27 +410,30 @@ app.post('/signup', async(req, res)=>{
             color,
         })
     }
-    const user = new Users({
-        name:req.body.username,
+    const userData = {
+        name: req.body.username,
         email: req.body.email,
-        password:req.body.password,
-        cartData:cart,
-        index:req.body.index,
-        faculty:req.body.faculty,
-        department:req.body.department,
-        batch:req.body.batch,
+        password: req.body.password,
+        cartData: cart,
+        index: req.body.index,
+        faculty: req.body.faculty,
+        department: req.body.department,
+        batch: req.body.batch,
         profile_pic: req.body.profile_pic,
-    })
+        isVerified: false,
+    };
 
-    await user.save();
+    const token = jwt.sign({ user: userData }, 'secret_ecom', { expiresIn: '1h' });
 
-    const data = {
-        user:{
-            id:user.id
-        }
-    }
-    const token = jwt.sign(data, 'secret_ecom');
-    res.json({success:true,token})
+    // await user.save();
+
+    // const data = {
+    //     user:{
+    //         id:user.id
+    //     }
+    // }
+    // const token = jwt.sign(data, 'secret_ecom');
+    // res.json({success:true,token})
 
     /** send mail to user */
     // let testAccount = await nodemailer.createTestAccount();
@@ -448,17 +455,27 @@ app.post('/signup', async(req, res)=>{
     //     },
     //   });
 
-    const transporter = nodemailer.createTransport(config)
+    const transporter = nodemailer.createTransport(config);
+    const verificationUrl = `https://moramerchfrontend.netlify.app/verify-email?token=${token}`;
+
 
     let message = {
     from: 'MORAMERCH', // sender address
     to: req.body.email, // list of receivers
     subject: "Register for MORAMERCH", // Subject line
-    text: "Successfully Register with MORAMERCH.", // plain text body
-    html: "<b>Successfully Register with MORAMERCH.</b>", // html body
+    text: `Please verify your email by clicking on the following link: ${verificationUrl}`,
+    html: `Please verify your email by clicking on the following link: <a href="${verificationUrl}">Click here.</a>`,
     }
 
-    transporter.sendMail(message);
+    transporter.sendMail(message, (err, info) => {
+        if (err) {
+            console.error('Error sending email', err);
+            return res.status(500).json({ success: false, errors: 'Error sending verification email' });
+        } else {
+            console.log('Verification email sent', info.response);
+            res.json({ success: true, token });
+        }
+    });
     // .then(()=>{
     // const token = jwt.sign(data, 'secret_ecom');
     // return res.status(201).json({ 
@@ -474,6 +491,40 @@ app.post('/signup', async(req, res)=>{
 
     
 })
+
+app.get('/verify-email', async (req, res) => {
+    const token = req.query.token;
+
+    if (!token) {
+        console.log('Invalid or missing token');
+        return res.status(400).json({ error: 'Invalid or missing token' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, 'secret_ecom');
+        const userData = decoded.user;
+
+        let check = await Users.findOne({ email: userData.email });
+        if (check) {
+            
+                check.isVerified = true;
+                await check.save();
+                console.log('Email verified successfully!');
+                return res.status(200).json({ message: 'Email verified successfully!' });
+            
+        } else {
+            // Save the user to the database
+            const user = new Users(userData);
+            user.isVerified = true;
+            await user.save();
+            console.log('Email verified and user saved successfully!');
+            return res.status(200).json({ message: 'Email verified and user saved successfully!' });
+        }
+    } catch (err) {
+        console.log('Invalid or expired token');
+        return res.status(400).json({ error: 'Invalid or expired token' });
+    }
+});
 
 
 ///////////////////////////////////////////////////////////
@@ -607,7 +658,9 @@ app.post('/removeallfromcart',fetchUser,async (req,res)=>{
 app.post('/getcart',fetchUser,async (req,res)=>{
     console.log("GetCart");
     let userData = await Users.findOne({_id:req.user.id});
-    res.json(userData.cartData);
+    if(userData){
+        res.json(userData.cartData);
+    }
 })
 
 ///////////////////////////////////////////////////////////////
