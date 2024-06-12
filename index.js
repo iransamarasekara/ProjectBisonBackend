@@ -464,7 +464,7 @@ app.post('/signup', async(req, res)=>{
     to: req.body.email, // list of receivers
     subject: "Register for MORAMERCH", // Subject line
     text: `Please verify your email by clicking on the following link: ${verificationUrl}`,
-    html: `Please verify your email by clicking on the following link: <a href="${verificationUrl}">Click here.</a>`,
+    html: `Please verify your email by clicking on the following link: <a href="${verificationUrl}">${verificationUrl}</a>`,
     }
 
     transporter.sendMail(message, (err, info) => {
