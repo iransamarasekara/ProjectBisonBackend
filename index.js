@@ -423,16 +423,16 @@ app.post('/signup', async(req, res)=>{
         isVerified: false,
     };
 
-    const token = jwt.sign({ user: userData }, 'secret_ecom', { expiresIn: '1h' });
+    // const token = jwt.sign({ user: userData }, 'secret_ecom', { expiresIn: '1h' });
 
-    // await user.save();
+    await user.save();
 
-    // const data = {
-    //     user:{
-    //         id:user.id
-    //     }
-    // }
-    // const token = jwt.sign(data, 'secret_ecom');
+    const data = {
+        user:{
+            id:user.id
+        }
+    }
+    const token = jwt.sign(data, 'secret_ecom', { expiresIn: '1h' });
     // res.json({success:true,token})
 
     /** send mail to user */
@@ -502,24 +502,16 @@ app.get('/verify-email', async (req, res) => {
 
     try {
         const decoded = jwt.verify(token, 'secret_ecom');
-        const userData = decoded.user;
-
-        let check = await Users.findOne({ email: userData.email });
-        if (check) {
-            
-                check.isVerified = true;
-                await check.save();
-                console.log('Email verified successfully!');
-                return res.status(200).json({ message: 'Email verified successfully!' });
-            
-        } else {
-            // Save the user to the database
-            const user = new Users(userData);
-            user.isVerified = true;
-            await user.save();
-            console.log('Email verified and user saved successfully!');
-            return res.status(200).json({ message: 'Email verified and user saved successfully!' });
+        const user = await Users.findById(decoded.user.id);
+        if (!user) {
+            console.log('User not found');
+            return res.status(400).json({ error: 'User not found' });
         }
+
+        user.isVerified = true;
+        await user.save();
+        console.log('Email verified successfully!');
+        res.status(200).json({ message: 'Email verified successfully!' });
     } catch (err) {
         console.log('Invalid or expired token');
         return res.status(400).json({ error: 'Invalid or expired token' });
@@ -545,7 +537,7 @@ app.post('/login',async (req, res)=>{
     let user = await Users.findOne({email:req.body.email});
     if(user){
         const passCompare = req.body.password===user.password;
-        if(passCompare){
+        if(passCompare && user.isVerified){
             const data = {
                 user:{
                     id:user.id
