@@ -410,7 +410,7 @@ app.post('/signup', async(req, res)=>{
             color,
         })
     }
-    const userData = {
+    const user = new Users({
         name: req.body.username,
         email: req.body.email,
         password: req.body.password,
@@ -421,7 +421,7 @@ app.post('/signup', async(req, res)=>{
         batch: req.body.batch,
         profile_pic: req.body.profile_pic,
         isVerified: false,
-    };
+    });
 
     // const token = jwt.sign({ user: userData }, 'secret_ecom', { expiresIn: '1h' });
 
