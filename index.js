@@ -226,6 +226,12 @@ const Product = mongoose.model("Product",{
     no_of_rators:{
         type:Number,
     },
+    size_guide:{
+        type:String,
+    },
+    acc_no:{
+        type:String,
+    },
 
 })
 
@@ -271,6 +277,8 @@ app.post('/addproduct', async (req,res)=>{
         rating:req.body.rating,
         reviewText:req.body.reviewText,
         no_of_rators:req.body.no_of_rators,
+        size_guide:req.body.size_guide,
+        acc_no:req.body.acc_no,
     });
     console.log(product);
     await product.save();
