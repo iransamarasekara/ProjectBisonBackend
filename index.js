@@ -348,15 +348,15 @@ app.get('/allproducts',async (req, res)=>{
 const Users = mongoose.model('Users', {
     name:{
         type:String,
-        unique:true,
+        // unique:true,
     },
     email:{
         type:String,
-        unique:true,
+        // unique:true,
     },
     password:{
         type:String,
-        unique:true,
+        // unique:true,
     },
     cartData:{
         type:Object,
@@ -412,7 +412,8 @@ app.post('/signup', async(req, res)=>{
     }
     const user = new Users({
         name: req.body.username,
-        email: req.body.email,
+        // email: req.body.email,
+        email: '',
         password: req.body.password,
         cartData: cart,
         index: req.body.index,
@@ -429,7 +430,8 @@ app.post('/signup', async(req, res)=>{
 
     const data = {
         user:{
-            id:user.id
+            id:user.id,
+            email:req.body.email
         }
     }
     const token = jwt.sign(data, 'secret_ecom', { expiresIn: '1h' });
@@ -509,6 +511,7 @@ app.get('/verify-email', async (req, res) => {
         }
 
         user.isVerified = true;
+        user.email = decoded.user.email;
         await user.save();
         console.log('Email verified successfully!');
         res.status(200).json({ message: 'Email verified successfully!' });
