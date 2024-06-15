@@ -403,6 +403,16 @@ const Users = mongoose.model('Users', {
 // creating endpoint for registering user
 app.post('/signup', async(req, res)=>{
 
+    let users = await Users.find({});
+    let id;
+    if(users.length>0)
+    {
+        id = users.length+1;
+    }
+    else{
+        id=1;
+    }
+
     let check = await Users.findOne({email:req.body.email});
     if(check){
         return res.status(400).json({success:false,errors:"existing user found with same email address"})
@@ -421,7 +431,7 @@ app.post('/signup', async(req, res)=>{
     const user = new Users({
         name: req.body.username,
         // email: req.body.email,
-        email: '',
+        email: String(id),
         password: req.body.password,
         cartData: cart,
         index: req.body.index,
