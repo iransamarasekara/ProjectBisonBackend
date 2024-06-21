@@ -492,9 +492,9 @@ app.post('/signup', async(req, res)=>{
 
 
     let message = {
-    from: 'MORAMERCH', // sender address
+    from: 'MORAMERC', // sender address
     to: req.body.email, // list of receivers
-    subject: "Register for MORAMERCH", // Subject line
+    subject: "Register for MORAMERC", // Subject line
     text: `Please verify your email by clicking on the following link: ${verificationUrl}`,
     html: `Please verify your email by clicking on the following link: <a href="${verificationUrl}">${verificationUrl}</a>`,
     }
@@ -868,7 +868,7 @@ app.post('/orderconfirmation', async (req,res)=>{
     let MailGenerator = new Mailgen({
         theme:'default',
         product:{
-            name:'MORAMERCH',
+            name:'MORAMERC',
             link: 'https://mailgen.js/'
         }
     })
