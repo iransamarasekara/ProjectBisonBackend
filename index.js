@@ -26,7 +26,7 @@ app.use(express.json());
 app.use(cors());
 
 // Database Connection With MongoDB
-mongoose.connect("mongodb+srv://Bison:0123456789@cluster0.fwkif6z.mongodb.net/t-shirt-new");
+mongoose.connect(`mongodb+srv://Bison:${process.env.PASS}@cluster0.fwkif6z.mongodb.net/t-shirt-new`);
 
 
 // async function getObjectURL(key){
