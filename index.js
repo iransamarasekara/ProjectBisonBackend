@@ -241,6 +241,21 @@ const Product = mongoose.model("Product",{
     acc_name:{
         type:String,
     },
+    acc_branch:{
+        type:String,
+    },
+    acc_no2:{
+        type:String,
+    },
+    bank2:{
+        type:String,
+    },
+    acc_name2:{
+        type:String,
+    },
+    acc_branch2:{
+        type:String,
+    },
 
 })
 
@@ -291,6 +306,11 @@ app.post('/addproduct', async (req,res)=>{
         avl_order_types:req.body.avl_order_types,
         bank:req.body.bank,
         acc_name:req.body.acc_name,
+        acc_branch:req.body.acc_branch,
+        acc_no2:req.body.acc_no2,
+        bank2:req.body.bank2,
+        acc_name2:req.body.acc_name2,
+        acc_branch2:req.body.acc_branch2,
     });
     console.log(product);
     await product.save();
