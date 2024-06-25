@@ -464,7 +464,7 @@ app.post('/signup', async(req, res)=>{
             email:req.body.email
         }
     }
-    const token = jwt.sign(data, 'secret_ecom', { expiresIn: '1h' });
+    const token = jwt.sign(data, 'secret_ecom', { expiresIn: '24h' });
     // res.json({success:true,token})
 
     /** send mail to user */
