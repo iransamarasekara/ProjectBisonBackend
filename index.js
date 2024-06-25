@@ -561,6 +561,17 @@ app.get('/allusers',async (req, res)=>{
     res.send(users);
 })
 
+// Creating API for remove user
+
+app.post('/removeuser', async(req, res)=>{
+    await Users.findOneAndDelete({email:req.body.email});
+    console.log("User Removed");
+    res.json({
+        success:true,
+        email:req.body.email
+    })
+})
+
 
 ////////////////////////////////////////////////////////////////////
 
