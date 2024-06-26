@@ -847,6 +847,9 @@ const Order = mongoose.model("Order",{
         type:String,
         required:true,
     },
+    index:{
+        type:String,
+    }
 })
 
  
@@ -876,6 +879,7 @@ app.post('/orderconfirmation', async (req,res)=>{
         total:req.body.total,
         username:req.body.username,
         productname:req.body.productname,
+        index:req.body.index,
     });
     console.log(order);
     await order.save();
