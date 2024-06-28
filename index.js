@@ -443,11 +443,18 @@ app.post('/signup', async(req, res)=>{
     }
 
     let check = await Users.findOne({email:req.body.email});
-    
+    let check1 = await Users.findOne({name:req.body.name});
+    let check2 = await Users.findOne({password:req.body.password});
     let check3 = await Users.findOne({index:req.body.index});
     
     if(check){
         return res.status(400).json({success:false,errors:"existing user found with same email address."})
+    }
+    if(check1){
+        return res.status(400).json({success:false,errors:"existing user found with same username. enter your full name."})
+    }
+    if(check2){
+        return res.status(400).json({success:false,errors:"try another password."})
     }
     if(check3){
         return res.status(400).json({success:false,errors:"existing user found with same index. please contact via whatsApp."})
