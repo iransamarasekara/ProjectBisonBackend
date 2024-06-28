@@ -739,6 +739,14 @@ app.post('/getuser',fetchUser,async (req,res)=>{
     res.json(userEmail.email);
 })
 
+//creating API for get user by email///////////////////////////////////////////////////////////////////////////////////////////
+
+app.post('/getuserbymail', async (req,res)=>{
+    console.log("GetUser By Mail");
+    let user = await Users.findOne({email:req.body.email});
+    res.json(user);
+})
+
 // Image Storage Engine for slips
 
 
