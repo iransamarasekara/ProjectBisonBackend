@@ -386,17 +386,17 @@ app.get('/allproducts',async (req, res)=>{
 // Shema creating for User model
 
 const Users = mongoose.model('Users', {
-    name:{
-        type:String,
-        unique:false,
-    },
     email:{
         type:String,
-        unique:true,
+        // unique:true,
+    },
+    name:{
+        type:String,
+        // unique:false,
     },
     password:{
         type:String,
-        unique:false,
+        // unique:false,
     },
     cartData:{
         type:Object,
@@ -408,7 +408,7 @@ const Users = mongoose.model('Users', {
     index:{
         type:String,
         required:true,
-        unique:true,
+        // unique:true,
     },
     faculty:{
         type:String,
