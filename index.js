@@ -388,15 +388,12 @@ app.get('/allproducts',async (req, res)=>{
 const Users = mongoose.model('Users', {
     email:{
         type:String,
-        // unique:true,
     },
     name:{
         type:String,
-        // unique:false,
     },
     password:{
         type:String,
-        // unique:false,
     },
     cartData:{
         type:Object,
@@ -408,7 +405,6 @@ const Users = mongoose.model('Users', {
     index:{
         type:String,
         required:true,
-        // unique:true,
     },
     faculty:{
         type:String,
@@ -447,8 +443,20 @@ app.post('/signup', async(req, res)=>{
     }
 
     let check = await Users.findOne({email:req.body.email});
+    
+    let check3 = await Users.findOne({index:req.body.index});
+    
     if(check){
-        return res.status(400).json({success:false,errors:"existing user found with same email address"})
+        return res.status(400).json({success:false,errors:"existing user found with same email address."})
+    }
+    if(check1){
+        return res.status(400).json({success:false,errors:"existing user found with same username. enter your full name."})
+    }
+    if(check2){
+        return res.status(400).json({success:false,errors:"your password not strong. enter another password."})
+    }
+    if(check3){
+        return res.status(400).json({success:false,errors:"existing user found with same index. please contact via whatsApp."})
     }
     let cart =[];
     for(let i =0; i < 300; i++){
