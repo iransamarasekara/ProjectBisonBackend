@@ -585,11 +585,11 @@ app.get('/verify-email', async (req, res) => {
 ///////////////////////////////////////////////////////////
 // Creating API for getting all users
 
-app.get('/allusers',async (req, res)=>{
-    let users = await Users.find({});
-    console.log("All Users Fetched");
-    res.send(users);
-})
+// app.get('/allusers',async (req, res)=>{
+//     let users = await Users.find({});
+//     console.log("All Users Fetched");
+//     res.send(users);
+// })
 
 // Creating API for remove user
 
