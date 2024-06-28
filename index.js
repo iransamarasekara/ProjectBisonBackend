@@ -518,7 +518,7 @@ app.post('/signup', async(req, res)=>{
     //   });
 
     const transporter = nodemailer.createTransport(config);
-    const verificationUrl = `https://moramerchfrontend.netlify.app/verify-email?token=${token}`;
+    const verificationUrl = `https://moramerc.lk/verify-email?token=${token}`;
 
 
     let message = {
