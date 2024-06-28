@@ -388,15 +388,15 @@ app.get('/allproducts',async (req, res)=>{
 const Users = mongoose.model('Users', {
     name:{
         type:String,
-        // unique:true,
+        unique:false,
     },
     email:{
         type:String,
-        // unique:true,
+        unique:true,
     },
     password:{
         type:String,
-        // unique:true,
+        unique:false,
     },
     cartData:{
         type:Object,
@@ -408,6 +408,7 @@ const Users = mongoose.model('Users', {
     index:{
         type:String,
         required:true,
+        unique:true,
     },
     faculty:{
         type:String,
