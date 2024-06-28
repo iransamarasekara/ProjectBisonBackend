@@ -449,12 +449,6 @@ app.post('/signup', async(req, res)=>{
     if(check){
         return res.status(400).json({success:false,errors:"existing user found with same email address."})
     }
-    if(check1){
-        return res.status(400).json({success:false,errors:"existing user found with same username. enter your full name."})
-    }
-    if(check2){
-        return res.status(400).json({success:false,errors:"your password not strong. enter another password."})
-    }
     if(check3){
         return res.status(400).json({success:false,errors:"existing user found with same index. please contact via whatsApp."})
     }
