@@ -744,6 +744,9 @@ app.post('/getuser',fetchUser,async (req,res)=>{
 app.post('/getuserbymail', async (req,res)=>{
     console.log("GetUser By Mail");
     let user = await Users.findOne({email:req.body.email});
+    if (user) {
+        delete user.password;
+    }
     res.json(user);
 })
 
