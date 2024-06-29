@@ -741,14 +741,12 @@ app.post('/getuser',fetchUser,async (req,res)=>{
 
 //creating API for get user by email///////////////////////////////////////////////////////////////////////////////////////////
 
-app.post('/getuserbymail', async (req,res)=>{
+app.post('/getuserbymail', async (req, res) => {
     console.log("GetUser By Mail");
-    let user = await Users.findOne({email:req.body.email});
-    if (user) {
-        delete user.password;
-    }
+    // Use projection to exclude the password field from the result
+    let user = await Users.findOne({email: req.body.email}, {password: 0});
     res.json(user);
-})
+});
 
 // Image Storage Engine for slips
 
