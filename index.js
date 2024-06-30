@@ -741,10 +741,10 @@ app.post('/getuser',fetchUser,async (req,res)=>{
 
 //creating API for get user by email///////////////////////////////////////////////////////////////////////////////////////////
 
-app.post('/getuserbymail', async (req, res) => {
+app.post('/getuserbymail', fetchUser, async (req, res) => {
     console.log("GetUser By Mail");
     // Use projection to exclude the password field from the result
-    let user = await Users.findOne({email: req.body.email}, {password: 0});
+    let user = await Users.findOne({_id:req.user.id}, {password: 0});
     res.json(user);
 });
 
