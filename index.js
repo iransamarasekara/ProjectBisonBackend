@@ -256,6 +256,18 @@ const Product = mongoose.model("Product",{
     acc_branch2:{
         type:String,
     },
+    avl_frimi:{
+        type:Boolean,
+    },
+    frimi_link:{
+        type:String,
+    },
+    avl_home_delivery:{
+        type:Boolean,
+    },
+    frimi_discount:{
+        type:Number,
+    },
 
 })
 
@@ -311,6 +323,10 @@ app.post('/addproduct', async (req,res)=>{
         bank2:req.body.bank2,
         acc_name2:req.body.acc_name2,
         acc_branch2:req.body.acc_branch2,
+        avl_frimi:req.body.avl_frimi,
+        frimi_link:req.body.frimi_link,
+        avl_home_delivery:req.body.avl_home_delivery,
+        frimi_discount:req.body.frimi_discount,
     });
     console.log(product);
     await product.save();
@@ -878,6 +894,15 @@ const Order = mongoose.model("Order",{
     department:{
         type:String,
     },
+    uni_pickup:{
+        type:String,
+    },
+    pre_order_method:{
+        type:String,
+    },
+    address:{
+        type:String,
+    },
 })
 
  
@@ -911,6 +936,9 @@ app.post('/orderconfirmation', async (req,res)=>{
         batch:req.body.batch,
         faculty:req.body.faculty,
         department:req.body.department,
+        uni_pickup:req.body.uni_pickup,
+        pre_order_method:req.body.pre_order_method,
+        address:req.body.address,
     });
     console.log(order);
     await order.save();
