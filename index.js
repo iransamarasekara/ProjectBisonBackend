@@ -1092,6 +1092,45 @@ app.get('/alladvertisements',async (req, res)=>{
     res.send(adds);
 })
 
+// Mongoose model for FundRaising
+const FundRaising = mongoose.model("FundRaising", {
+    amount: {
+        type: Number,
+        default: 0,
+    },
+    donators: {
+        type: Number,
+        default: 0,
+    },
+});
+
+// API to get the FundRaising document
+app.get('/fundraising123', async (req, res) => {
+    try {
+        const fundraising = await FundRaising.findOne(); // Assuming there's only one document
+        if (!fundraising) {
+            return res.status(404).send('FundRaising document not found');
+        }
+        res.json(fundraising);
+    } catch (error) {
+        res.status(500).send(error.toString());
+    }
+});
+
+// API to update the FundRaising document
+app.post('/fundraising123', async (req, res) => {
+    const { amount, donators } = req.body;
+    try {
+        // Assuming there's only one document, so we use findOneAndUpdate with an empty filter
+        const updatedFundRaising = await FundRaising.findOneAndUpdate({}, { $set: { amount, donators } }, { new: true, upsert: true }); // upsert: true creates the document if it doesn't exist
+        res.json({
+            success:true,
+        });
+    } catch (error) {
+        res.status(500).send(error.toString());
+    }
+});
+
 app.listen(port, (error)=>{
     if(!error){
         console.log("Server Running on Port "+port)
