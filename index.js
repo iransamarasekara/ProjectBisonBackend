@@ -962,7 +962,7 @@ app.post('/orderconfirmation', async (req,res)=>{
     let MailGenerator = new Mailgen({
         theme:'default',
         product:{
-            name:'MORAMERC',
+            name:'MoraMerc',
             link: 'https://mailgen.js/'
         }
     })
@@ -982,7 +982,7 @@ app.post('/orderconfirmation', async (req,res)=>{
                 }
             ]
           },
-          outro: 'Thank you for order from us!'
+          outro: 'Thank you for ordering from us!'
         }
     }
 
